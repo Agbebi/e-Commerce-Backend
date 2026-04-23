@@ -24,7 +24,7 @@ mongoose.connect('mongodb+srv://agbebitimothy8_db_user:Tims2000@tims.kjghuix.mon
 
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: "https://e-commerce-frontend-seven-sage.vercel.app/",
         methods: ['GET', 'POST', 'DELETE', 'PUT'],
         allowedHeaders: [
             'Content-Type',
