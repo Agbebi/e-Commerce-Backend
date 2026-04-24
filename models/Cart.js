@@ -22,7 +22,6 @@ const CartSchema = new mongoose.Schema({
     ]
 }, {
     timestamps : true,
-    strictPopulate : false
 })
 
 
