@@ -19,10 +19,21 @@ mongoose.connect('mongodb+srv://agbebitimothy8_db_user:Tims2000@tims.kjghuix.mon
     )
     .catch((error) => console.log(error))
 
+    const allowedOrigins = [
+        'https://e-commerce-tims.netlify.app/', 'http://localhost:5173'
+    ]
+
 
 app.use(
     cors({
-        origin: "*",
+        origin: function (origin, callback) {
+            if (!origin) return callback(null, true)
+                if(allowedOrigins.indexOf(origin) == -1){
+                    const msg = 'The CORS policy for this site does not allow access from the specified origin'
+                    return callback(new Error(msg), false)
+                }
+                return callback(null, true)
+        },
         methods: ['GET', 'POST', 'DELETE', 'PUT'],
         allowedHeaders: [
             'Content-Type',
