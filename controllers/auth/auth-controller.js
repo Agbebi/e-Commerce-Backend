@@ -72,7 +72,14 @@ const loginUser = async (req, res) => {
             userName : checkUser.userName
         }, 'CLIENT_SECRET_KEY', {expiresIn : '60m'})     
         
-        res.cookie('token', token, {httpOnly : true, secure : false}).json({
+        res.cookie('token', token, {{
+  httpOnly: true,
+  // Use secure: true if in production (HTTPS)
+  secure: process.env.NODE_ENV === "production", 
+  // 'none' is required for cross-site cookies
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: 3600000, // 1 hour
+}).json({
             success : true,
             message : 'Logged in successfully',
             user : {
