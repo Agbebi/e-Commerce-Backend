@@ -20,7 +20,7 @@ mongoose.connect('mongodb+srv://agbebitimothy8_db_user:Tims2000@tims.kjghuix.mon
     .catch((error) => console.log(error))
 
     const allowedOrigins = [
-        'https://timscommerce.netlify.app/', 'http://localhost:5173'
+        'https://timscommerce.netlify.app', 'http://localhost:5173'
     ]
 
 
