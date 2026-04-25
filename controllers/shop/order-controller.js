@@ -36,8 +36,8 @@ const createOrder = async (req, res) => {
             body: {
                 intent: 'CAPTURE',
                 applicationContext: {
-                    returnUrl: 'http://localhost:5173/shop/payment',
-                    cancelUrl: 'http://localhost:5173/shop/checkout'
+                    returnUrl: 'https://timscommerce.netlify.app/shop/payment',
+                    cancelUrl: 'https://timscommerce.netlify.app/shop/checkout'
                 },
                 purchaseUnits: [
                     {
