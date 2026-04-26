@@ -45,7 +45,7 @@ app.use('/api/shop/products', shopProductsRouter)
 app.use('/api/shop/cart', shopCartRouter)
 app.use('/api/shop/address', addressRouter)
 app.use('/api/shop/order', orderRouter)
-
+app.set('trust proxy', 1)
 
 app.listen(PORT, console.log(
     `Server started successfully at ${PORT}`
