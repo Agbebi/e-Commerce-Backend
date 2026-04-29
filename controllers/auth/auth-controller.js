@@ -100,12 +100,17 @@ const loginUser = async (req, res) => {
 }
 
 //logout
-    const logoutUser = (req, res) => {
-        res.clearCookie('token').json({
-            success : true,
-            message : 'Logged out Successfully'
-        }) 
-    }
+const logoutUser = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  }).json({
+    success: true,
+    message: 'Logged out Successfully'
+  });
+};
+
 
 
 //auth middleware
