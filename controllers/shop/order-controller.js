@@ -50,6 +50,13 @@ const createOrder = async (req, res) => {
             }
         }
 
+        res.cookie('cartId', cartId, {
+      httpOnly: false, // Set to false so the frontend JavaScript can read it
+      secure: process.env.NODE_ENV === 'production', // Use secure in production
+      maxAge: 7 * 24 * 60 * 60 * 1000, // Expires in 7 days
+      sameSite: 'lax'
+    });
+
 
         const response = await ordersController.createOrder(collect)
 
