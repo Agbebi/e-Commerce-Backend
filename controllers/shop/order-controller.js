@@ -82,7 +82,7 @@ const capturePayment = async (req, res) => {
         const payerId = result.result.payer.payerId
         const paymentId = result.result.id
         
-        const order = await Order.findByIdAndUpdate(orderID,{
+        const order = await Order.findOneAndUpdate({paymentId : orderID},{
             paymentId : paymentId,
             payerId : payerId,
             paymentStatus : 'Paid',
