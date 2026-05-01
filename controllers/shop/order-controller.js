@@ -50,13 +50,6 @@ const createOrder = async (req, res) => {
             }
         }
 
-        res.cookie('cartId', cartId, {
-      httpOnly: false, // Set to false so the frontend JavaScript can read it
-      secure: process.env.NODE_ENV === 'production', // Use secure in production
-      maxAge: 7 * 24 * 60 * 60 * 1000, // Expires in 7 days
-      sameSite: 'lax'
-    });
-
 
         const response = await ordersController.createOrder(collect)
 
@@ -89,7 +82,7 @@ const capturePayment = async (req, res) => {
         const payerId = result.result.payer.payerId
         const paymentId = result.result.id
         
-        const order = await Order.findOneAndUpdate({userId : userID},{
+        const order = await Order.findByIdAndUpdate(orderID,{
             paymentId : paymentId,
             payerId : payerId,
             paymentStatus : 'Paid',
