@@ -90,7 +90,7 @@ const capturePayment = async (req, res) => {
             orderUpdateDate : new Date()
         }, { new : true})  
 
-        await Cart.findOneAndDelete({userId : userID})
+        await Cart.findOneAndDelete({_id : orderID})
 
          res.status(200).json({
             success: true,
