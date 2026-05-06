@@ -14,6 +14,8 @@ const PORT = process.env.PORT || 3000
 
 const app = express()
 
+const appUrl = "https://timscommerce.netlify.app"
+
 
 // Connecting to Database
 mongoose.connect('mongodb+srv://agbebitimothy8_db_user:Tims2000@tims.kjghuix.mongodb.net/')
@@ -24,7 +26,7 @@ mongoose.connect('mongodb+srv://agbebitimothy8_db_user:Tims2000@tims.kjghuix.mon
 
 app.use(
     cors({
-        origin: ["https://timscommerce.netlify.app", "http://localhost:5173"],
+        origin: appUrl,
         methods: ['GET', 'POST', 'DELETE', 'PUT'],
         allowedHeaders: [
             'Content-Type',

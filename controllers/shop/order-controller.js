@@ -69,7 +69,7 @@ const createOrder = async (req, res) => {
 const capturePayment = async (req, res) => {
     try {
         const { orderID } = req.params
-        const { userID } = req.body
+        const { cartID } = req.body
 
 
         const collect = {
@@ -83,15 +83,15 @@ const capturePayment = async (req, res) => {
         const payerId = result.result.payer.payerId
         const paymentId = result.result.id
 
-        const order = await Order.findOneAndUpdate({ _id: orderID }, {
+        const order = await Order.findOneAndUpdate({cartId : cartID}, {
             paymentId: paymentId,
             payerId: payerId,
             paymentStatus: 'Paid',
             orderStatus: 'confirmed',
             orderUpdateDate: new Date()
-        }, { new: true })
+        }, { new: true })        
 
-        await Cart.findOneAndDelete({ userId: userID })
+        await Cart.findByIdAndDelete(cartID)
 
         res.status(200).json({
             success: true,
@@ -113,8 +113,6 @@ const getAllOrdersByUser = async (req, res) => {
 
     try {
         const { userID } = req.params
-
-        console.log(userID);
 
         const orders = await Order.find({ userId: userID })
 
