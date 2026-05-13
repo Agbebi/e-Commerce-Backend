@@ -8,6 +8,8 @@ const shopProductsRouter = require('./routes/shop/product-routes')
 const shopCartRouter = require('./routes/shop/cart-routes')
 const addressRouter = require('./routes/shop/address-routes')
 const orderRouter = require('./routes/shop/order-routes')
+const adminOrdersRouter = require('./routes/admin/orders-routes')
+const shopSearchRouter = require('./routes/shop/search-routes')
 
 
 const PORT = process.env.PORT || 3000
@@ -15,6 +17,7 @@ const PORT = process.env.PORT || 3000
 const app = express()
 
 const appUrl = "https://timscommerce.netlify.app"
+const localHost = 'http://localhost:5173'
 
 
 // Connecting to Database
@@ -42,11 +45,15 @@ app.use(
 app.use(cookieParser())
 app.use(express.json())
 app.use('/api/auth', authRouter)
+
 app.use('/api/admin/products', adminProductsRouter)
+app.use('/api/admin/orders', adminOrdersRouter)
+
 app.use('/api/shop/products', shopProductsRouter)
 app.use('/api/shop/cart', shopCartRouter)
 app.use('/api/shop/address', addressRouter)
 app.use('/api/shop/order', orderRouter)
+app.use('/api/shop/search', shopSearchRouter)
 app.set('trust proxy', 1)
 
 app.listen(PORT, console.log(

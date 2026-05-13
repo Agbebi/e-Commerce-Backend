@@ -5,6 +5,12 @@ const Product = require('../../models/Product');
 const handleImageUpload = async (req, res) => {
 
     try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "No file uploaded"
+            });
+        }
 
         const b64 = Buffer.from(req.file.buffer).toString('base64');
         const url = `data:${req.file.mimetype};base64,${b64}`;
@@ -31,7 +37,10 @@ const handleImageUpload = async (req, res) => {
 
 async function addProduct(req, res) {
     try {
-        const { image, name, description, category, brand, price, salesPrice, totalStock } = req.body
+        const { image, name, description, category, vendorId, brand, price, salesPrice, totalStock } = req.body
+
+        console.log(vendorId, 'Vendor Id');
+        
 
         const newlyCreatedProduct = new Product({
             image,
@@ -41,7 +50,8 @@ async function addProduct(req, res) {
             brand, 
             price, 
             salesPrice, 
-            totalStock
+            totalStock,
+            vendorId
         })        
 
         await newlyCreatedProduct.save()
@@ -65,8 +75,10 @@ async function addProduct(req, res) {
 //Fetching all products
 
 async function fetchAllProducts(req, res) {
+
+    const { vendorId } = req.params
      try {
-        const allProducts = await Product.find({})
+        const allProducts = await Product.find({ vendorId: vendorId })
 
         res.status(200).json({
             success : true,

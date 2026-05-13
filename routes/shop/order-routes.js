@@ -7,7 +7,7 @@ const router = express.Router();
 
 
 router.post('/create-order', createOrder)
-router.post('/capture-order/:orderID', capturePayment)
+router.post('/capture-order/:opayReference', capturePayment)
 router.get('/list/:userID', getAllOrdersByUser)
 router.get('/details/:orderID', getOrderDetails)
 

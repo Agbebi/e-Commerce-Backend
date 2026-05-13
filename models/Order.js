@@ -3,14 +3,22 @@ const mongoose = require('mongoose')
 
 const OrderSchema = new mongoose.Schema({
     userId: String,
+    userInfo: {
+        userEmail: String,
+        userId: String,
+        userMobile: String,
+        userName: String
+    },
     cartId: String,
     cartItems: [
         {
             productId : String,
-            title : String,
-            image : String,
-            price : String,
-            quantity : String
+            name : String,
+            imageUrl : String,
+            price : Number,
+            description : String,
+            quantity : Number,
+            vendorId : String
         }
     ],
     addressInfo : {
@@ -30,7 +38,8 @@ const OrderSchema = new mongoose.Schema({
     orderDate : Date,
     orderUpdateDate : Date,
     paymentId : String,
-    payerId : String
+    payerId : String,
+    deliveryStatus : String
 })
 
 

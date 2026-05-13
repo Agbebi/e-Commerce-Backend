@@ -6,7 +6,7 @@ const User = require('../../models/User')
 
 const addToCart = async (req, res) => {
     try {
-        const { userId, productId, quantity } = req.body
+        const { userId, productId, quantity, description, name, imageUrl, price, vendorId } = req.body
 
         if (!userId || !productId || quantity <= 0) {
             res.status(400).json({
@@ -33,7 +33,7 @@ const addToCart = async (req, res) => {
         const findCurrentProductIndex = cart.items.findIndex(item => item.productId.toString() === productId)
 
         if (findCurrentProductIndex === -1) {
-            cart.items.push({ productId, quantity })
+            cart.items.push({ productId, quantity, description, name, imageUrl, price, vendorId })
         } else {
             cart.items[findCurrentProductIndex].quantity += quantity
         }
@@ -71,7 +71,7 @@ const fetchCartItems = async (req, res) => {
 
         const cart = await Cart.findOne({ userId }).populate({
             path: 'items.productId',
-            select: 'image name price salesPrice'
+            select: 'image name price salesPrice description vendorId'
         })
 
         if (!cart) {
@@ -95,7 +95,9 @@ const fetchCartItems = async (req, res) => {
             name : item.productId.name,
             price : item.productId.price,
             salesPrice : item.productId.salesPrice,
-            quantity : item.quantity
+            quantity : item.quantity,
+            description : item.productId.description,
+            vendorId : item.productId.vendorId
         }))
 
 
@@ -118,7 +120,7 @@ const fetchCartItems = async (req, res) => {
 
 const updateCartItems = async (req, res) => {
     try {
-        const { userId, productId, quantity } = req.body
+        const { userId, productId, quantity, description, name, imageUrl, price, vendorId } = req.body
 
         if (!userId || !productId || quantity <= 0) {
             return res.status(400).json({
@@ -153,7 +155,7 @@ const updateCartItems = async (req, res) => {
 
         await cart.populate({
             path : 'items.productId',
-            select : 'image name price salesPrice'
+            select : 'image name price salesPrice description vendorId'
         })
 
          const populateCartItems = cart.items.map((item) => ({
@@ -162,6 +164,8 @@ const updateCartItems = async (req, res) => {
             name : item.productId ? item.productId.name : 'Product not found',
             price : item.productId ? item.productId.price : null,
             salesPrice : item.productId ? item.productId.salesPrice : null,
+            description : item.productId ? item.productId.description : null,
+            vendorId : item.productId ? item.productId.vendorId : null,
             quantity : item.quantity
         }))
 
@@ -196,7 +200,7 @@ const deleteCartItems = async (req, res) => {
 
         const cart = await Cart.findOne({userId}).populate({
             path : 'items.productId',
-            select : 'image name price salesPrice'
+            select : 'image name price salesPrice description vendorId'
         })
 
         if (!cart) {
@@ -215,7 +219,7 @@ const deleteCartItems = async (req, res) => {
 
         await cart.populate({
             path : 'items.productId',
-            select : 'image name price salesPrice'
+            select : 'image name price salesPrice description vendorId'
         })
 
          const populateCartItems = cart.items.map((item) => ({
@@ -224,6 +228,8 @@ const deleteCartItems = async (req, res) => {
             name : item.productId ? item.productId.name : 'Product not found',
             price : item.productId ? item.productId.price : null,
             salesPrice : item.productId ? item.productId.salesPrice : null,
+            description : item.productId ? item.productId.description : null,
+            vendorId : item.productId ? item.productId.vendorId : null,
             quantity : item.quantity
         }))
 
