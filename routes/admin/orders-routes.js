@@ -3,7 +3,7 @@ const { deliverOrder, fetchAllOrders,updateOrderStatus } = require('../../contro
 
 const router = express.Router();
 
-router.put('/deliver/:orderId', deliverOrder);
+router.put('/deliver/:orderId/:userId', deliverOrder);
 router.get('/:userId/all', fetchAllOrders);
 router.put('/update-status/:orderId', updateOrderStatus);
 

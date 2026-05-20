@@ -1,10 +1,34 @@
 const Product = require('../../models/Product');
 const Order = require('../../models/Order');
+const User = require('../../models/User');
 
 const deliverOrder = async (req, res) => {
-    const { orderId } = req.params
+    const { orderId, userId } = req.params
+
+
+    console.log(orderId, 'Order Id');
+    
 
     try {
+
+        const user = await User.findById(userId);
+
+        console.log(user.role, 'User Role');
+        
+        if (!user) {
+            return res.status(404).json({
+                success : false,
+                message : "User not found"
+            })
+        }else {
+            const isAdmin = user.roles.includes('admin');
+            if (!isAdmin) {
+                return res.status(403).json({
+                    success : false,
+                    message : "Unauthorized access"
+                })
+            }
+        }
 
         const order = await Order.findByIdAndUpdate(orderId, { deliveryStatus: 'delivered', orderStatus: 'delivered' }, { new: true });
         
