@@ -1,13 +1,13 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const User = require('../../models/User')
+const {User} = require('../../../models/User')
 
 
 
 //register
 
 const registerUser = async (req, res) => {
-    const {userName, email, password} = req.body
+    const {userName, email, password, name, phoneNumber} = req.body
 
 
     try {
@@ -25,7 +25,9 @@ const registerUser = async (req, res) => {
         const newUser = new User({
             userName,
             email,
-            password: hashPassword
+            password: hashPassword,
+            name,
+            phoneNumber,
         })
 
         await newUser.save()
@@ -69,8 +71,10 @@ const loginUser = async (req, res) => {
             id : checkUser._id,
             role : checkUser.role,
             email : checkUser.email,
-            userName : checkUser.userName
-        }, 'CLIENT_SECRET_KEY', {expiresIn : '60m'})     
+            userName : checkUser.userName,
+            name : checkUser.name,
+            phoneNumber : checkUser.phoneNumber
+        }, 'CLIENT_SECRET_KEY', {expiresIn : '120m'})     
         
         res.cookie('token', token, {httpOnly : true, secure : true, sameSite : 'none'}).json({
             success : true,
@@ -79,7 +83,9 @@ const loginUser = async (req, res) => {
                 email : checkUser.email,
                 role : checkUser.role,
                 id : checkUser._id,
-                userName : checkUser.userName
+                userName : checkUser.userName,
+                name : checkUser.name,
+                phoneNumber : checkUser.phoneNumber
             }
         })
         

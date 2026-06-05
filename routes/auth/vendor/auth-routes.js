@@ -1,13 +1,13 @@
 const express = require('express')
-const { registerUser, loginUser, logoutUser, authMiddleware } = require('../../controllers/auth/auth-controller')
+const { registerVendor, loginVendor, logoutVendor, authMiddleware } = require('../../../controllers/auth/vendor/auth-controller')
 
 
 const router = express.Router();
 
 
-router.post('/register', registerUser)
-router.post('/login', loginUser)
-router.post('/logout', logoutUser)
+router.post('/register', registerVendor)
+router.post('/login', loginVendor)
+router.post('/logout', logoutVendor)
 router.get('/check-auth', authMiddleware, (req, res) => {
     const user = req.user
 

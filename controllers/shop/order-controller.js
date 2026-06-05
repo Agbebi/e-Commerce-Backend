@@ -1,5 +1,5 @@
 const ordersController = require("../../helpers/paypal");
-const Order = require('../../models/Order')
+const { ParentOrder, ChildOrder } = require('../../models/Order')
 const Cart = require('../../models/Cart')
 const axios = require('axios')
 const crypto = require('crypto')
@@ -58,9 +58,6 @@ const createOpayPayment = async (orderData) => {
 
 // Function to check Opay payment status
 const checkOpayPaymentStatus = async (reference) => {
-
-
-
     const formData = {
         country: 'EG',
         reference: reference
@@ -77,7 +74,7 @@ const checkOpayPaymentStatus = async (reference) => {
             }, json: true,
             body: formData
         });
-        return response.data;        
+        return response.data;
     } catch (error) {
         console.error('Error checking Opay payment status:', error.response?.data || error.message);
         throw error;
@@ -85,47 +82,93 @@ const checkOpayPaymentStatus = async (reference) => {
 };
 
 
+
+
+
+
+
+
 const createOrder = async (req, res) => {
     try {
         const { userInfo, cartId, productList, addressInfo, orderStatus, paymentMethod, paymentStatus, totalAmount, orderDate, orderUpdateDate, paymentId, payerId, deliveryStatus } = req.body;
 
-        let order = await Order.findOne({ cartId })
+        let parentOrder = await ParentOrder.findOne({ cartId })
 
-        if (!order) {
-            order = new Order({
+        if (!parentOrder) {
+
+            const parentOrder = new ParentOrder({
                 userId: userInfo.userId,
                 userInfo: userInfo,
                 cartId: cartId,
-                cartItems: productList,
                 addressInfo: addressInfo,
-                orderStatus: orderStatus,
                 paymentMethod: paymentMethod,
-                paymentStatus: paymentStatus,
                 totalAmount: totalAmount,
                 orderDate: orderDate,
-                orderUpdateDate: orderUpdateDate,
-                paymentId: paymentId,
-                payerId: payerId,
-                deliveryStatus: deliveryStatus
+                childOrders: []
             })
 
-            await order.save()
+
+            await parentOrder.save()
+
+            // Create child orders for each vendor
+
+            const itemsByVendor = productList.reduce((acc, item) => {
+
+                const vendorId = item.vendorId;
+                if (!acc[vendorId]) {
+                    acc[vendorId] = [];
+                }
+                acc[vendorId].push(
+                    {
+                        productId: item.productId,
+                        name: item.name,
+                        imageUrl: item.imageUrl,
+                        price: item.price,
+                        description: item.description,
+                        quantity: item.quantity,
+                    }
+                );
+                return acc;
+            }, {});
+
+
+            const childOrderIds = [];
+
+            for (const vendorId in itemsByVendor) {
+                const items = itemsByVendor[vendorId];
+
+                const subTotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+                const childOrder = new ChildOrder({
+                    parentOrderId: parentOrder._id,
+                    vendorId: vendorId,
+                    cartItems: items,
+                    subTotal: subTotal,
+                    payoutDate: Date.now() + 7 * 24 * 60 * 60 * 1000, // Example payout date (7 days from now)
+                })
+                await childOrder.save();
+                childOrderIds.push(childOrder._id);
+            }
+
+            parentOrder.childOrders = childOrderIds;
+            await parentOrder.save();
+
         }
 
         // Create Opay payment
         const opayResponse = await createOpayPayment({
-            reference: order._id.toString(),
+            reference: parentOrder._id.toString(),
             totalAmount: totalAmount,
             customerName: userInfo.userName || 'Customer',
             customerEmail: userInfo.userEmail || 'customer@example.com',
             customerPhone: userInfo.userMobile || '+2340000000000',
             productList: productList
-
         })
 
+
         // Update order with payment reference
-        order.paymentId = opayResponse.data?.reference || opayResponse.reference;
-        await order.save();
+        parentOrder.paymentId = opayResponse.data?.reference || opayResponse.reference;
+        await parentOrder.save();
 
         res.cookie('cartId', cartId, { httpOnly: false, secure: true, sameSite: 'none' })
 
@@ -152,7 +195,9 @@ const capturePayment = async (req, res) => {
         // Check Opay payment status
         const statusResponse = await checkOpayPaymentStatus(opayReference);
 
-        if (statusResponse.data.status !== 'SUCCESS') {
+        console.log(statusResponse, 'Payment Status Response');
+
+        if (statusResponse.code !== '00000' || statusResponse.data.status !== 'SUCCESS') {
             return res.status(400).json({
                 success: false,
                 message: 'Payment not successful or pending'
@@ -160,18 +205,22 @@ const capturePayment = async (req, res) => {
         }
 
         // Update Database
-        const order = await Order.findOneAndUpdate({ paymentId: opayReference }, {
-            paymentStatus: 'Paid',
-            orderStatus: 'confirmed',
-            orderUpdateDate: new Date(),
-            deliveryStatus: 'Label Created'
+        const parentOrder = await ParentOrder.findOneAndUpdate({ paymentId: opayReference }, {
+            paymentStatus: 'completed',
         }, { new: true });
 
-        if (!order) {
+        if (!parentOrder) {
             return res.status(404).json({
                 success: false,
                 message: 'Order not found'
             });
+        }
+
+        const childOrders = await ChildOrder.find({ parentOrderId: parentOrder._id });
+
+        for (const childOrder of childOrders) {
+            childOrder.payoutStatus = 'completed';
+            await childOrder.save();
         }
 
         await Cart.findByIdAndDelete(cartID)
@@ -179,8 +228,80 @@ const capturePayment = async (req, res) => {
         res.status(200).json({
             success: true,
             message: 'Payment captured successfully!',
-            order: order
+            order: parentOrder
         })
+    } catch (e) {
+        console.log(e)
+        res.status(500).json({
+            success: false,
+            message: 'There was an error capturing payment!'
+        })
+    }
+}
+
+const queryPayment = async (req, res) => {
+    try {
+        const { opayReference } = req.params
+        const { cartID, productList } = req.body
+
+        const parentOrder = await ParentOrder.findById(opayReference);
+
+        if (!parentOrder) {
+            return res.status(404).json({
+                success: false,
+                message: 'Order not found'
+            });
+        }
+
+        // Check Opay payment status
+        const statusResponse = await checkOpayPaymentStatus(opayReference);
+
+        if (statusResponse.data.status === 'SUCCESS') {
+            parentOrder.paymentStatus = 'completed';
+            await parentOrder.save();
+
+            const childOrders = await ChildOrder.find({ parentOrderId: parentOrder._id });
+
+            for (const childOrder of childOrders) {
+                childOrder.payoutStatus = 'completed';
+                await childOrder.save();
+            }
+
+            await Cart.findByIdAndDelete(cartID)
+
+            return res.status(200).json({
+                success: true,
+                message: 'Payment captured successfully!',
+                order: parentOrder
+            })
+        } else {
+
+            const newReference = crypto.randomBytes(16).toString('hex');
+
+            const opayResponse = await createOpayPayment({
+                reference: newReference,
+                totalAmount: parentOrder.totalAmount,
+                customerName: parentOrder.userInfo.userName || 'Customer',
+                customerEmail: parentOrder.userInfo.userEmail || 'customer@example.com',
+                customerPhone: parentOrder.userInfo.userMobile || '+2340000000000',
+                productList: productList
+            })
+
+            const newPaymentId = opayResponse.data?.reference || opayResponse.reference;
+
+            parentOrder.paymentId = newPaymentId;
+            // Do not overwrite _id; use a separate payment reference if needed.
+            
+            await parentOrder.save();
+
+            res.status(200).json({
+                success: true,
+                message: 'Payment captured successfully!',
+                order: opayResponse
+            })
+        }
+
+
     } catch (e) {
         console.log(e)
         res.status(500).json({
@@ -197,7 +318,7 @@ const getAllOrdersByUser = async (req, res) => {
     try {
         const { userID } = req.params
 
-        const orders = await Order.find({ userId: userID })
+        const orders = await ParentOrder.find({ userId: userID })
 
         if (!orders.length) {
             res.status(400).json({
@@ -228,15 +349,19 @@ const getOrderDetails = async (req, res) => {
     try {
         const { orderID } = req.params
 
-        console.log(orderID);
+        const parentOrder = await ParentOrder.findById(orderID)
 
-        const order = await Order.findById(orderID)
-
-        if (!order) {
+        if (!parentOrder) {
             res.status(400).json({
                 success: false,
-                message: 'Order not found!'
+                message: 'Parent Order not found!'
             })
+        }
+        const childOrders = await ChildOrder.find({ parentOrderId: orderID })
+
+        const order = {
+            ...parentOrder._doc,
+            childOrders: childOrders
         }
 
         res.status(200).json({
@@ -255,4 +380,4 @@ const getOrderDetails = async (req, res) => {
 
 }
 
-module.exports = { createOrder, capturePayment, getAllOrdersByUser, getOrderDetails, createOpayPayment, checkOpayPaymentStatus }
+module.exports = { createOrder, capturePayment, queryPayment, getAllOrdersByUser, getOrderDetails, createOpayPayment, checkOpayPaymentStatus }
