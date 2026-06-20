@@ -32,7 +32,7 @@ const getFilteredProducts = async (req, res) => {
                 break;
 
                  case 'Z-A':
-                sort.name = 1
+                sort.name = -1
                 break;
         
             default:

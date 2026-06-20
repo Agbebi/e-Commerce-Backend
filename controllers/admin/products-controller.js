@@ -37,11 +37,14 @@ const handleImageUpload = async (req, res) => {
 
 async function addProduct(req, res) {
     try {
-        const { image, name, description, category, vendorId, brand, price, salesPrice, totalStock } = req.body
+        const { images, image, name, description, category, vendorId, brand, price, salesPrice, totalStock } = req.body
         
+        const newImages = Array.isArray(images)
+            ? images.slice(0, 5)
+            : image ? [image] : []
 
         const newlyCreatedProduct = new Product({
-            image,
+            images: newImages,
             name,
             description, 
             category, 
@@ -99,7 +102,7 @@ async function editProduct(req, res) {
 
         const { id } = req.params
         
-        const { image, name, description, category, brand, price, salesPrice, totalStock } = req.body
+        const { images, image, name, description, category, brand, price, salesPrice, totalStock } = req.body
 
         const findProduct = await Product.findById(id)
 
@@ -110,7 +113,11 @@ async function editProduct(req, res) {
             })
         }
 
-        findProduct.image = image || findProduct.image
+        const newImages = Array.isArray(images)
+            ? images.slice(0, 5)
+            : image ? [image] : findProduct.images
+
+        findProduct.images = newImages.length > 0 ? newImages : findProduct.images
         findProduct.name = name || findProduct.name
         findProduct.description = description || findProduct.description
         findProduct.category = category || findProduct.category

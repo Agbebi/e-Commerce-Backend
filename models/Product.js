@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const productSchema = new mongoose.Schema({
-    image : String,
+    images : [String],
     vendorId : {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Vendor',

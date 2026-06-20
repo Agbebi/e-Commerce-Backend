@@ -32,7 +32,7 @@ mongoose.connect('mongodb+srv://agbebitimothy8_db_user:Tims2000@tims.kjghuix.mon
 
 app.use(
     cors({
-        origin: appUrl,
+        origin: localHost,
         methods: ['GET', 'POST', 'DELETE', 'PUT'],
         allowedHeaders: [
             'Content-Type',

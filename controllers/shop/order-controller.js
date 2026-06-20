@@ -1,5 +1,7 @@
 const ordersController = require("../../helpers/paypal");
 const { ParentOrder, ChildOrder } = require('../../models/Order')
+const { Vendor } = require('../../models/User')
+const Product = require('../../models/Product')
 const Cart = require('../../models/Cart')
 const axios = require('axios')
 const crypto = require('crypto')
@@ -24,9 +26,9 @@ const createOpayPayment = async (orderData) => {
             "total": orderData.totalAmount,
             "currency": "EGP"
         },
-        "returnUrl": `${appUrl}/shop/payment`,
-        "callbackUrl": `${appUrl}/shop/checkout`,
-        "cancelUrl": `${appUrl}/shop/checkout`,
+        "returnUrl": `${localHost}/shop/payment`,
+        "callbackUrl": `${localHost}/shop/checkout`,
+        "cancelUrl": `${localHost}/shop/checkout`,
         "expireAt": 300,
         "userInfo": {
             "userEmail": orderData.customerEmail || "test@email.com",
@@ -82,12 +84,6 @@ const checkOpayPaymentStatus = async (reference) => {
 };
 
 
-
-
-
-
-
-
 const createOrder = async (req, res) => {
     try {
         const { userInfo, cartId, productList, addressInfo, orderStatus, paymentMethod, paymentStatus, totalAmount, orderDate, orderUpdateDate, paymentId, payerId, deliveryStatus } = req.body;
@@ -96,7 +92,7 @@ const createOrder = async (req, res) => {
 
         if (!parentOrder) {
 
-            const parentOrder = new ParentOrder({
+            parentOrder = new ParentOrder({
                 userId: userInfo.userId,
                 userInfo: userInfo,
                 cartId: cartId,
@@ -195,8 +191,6 @@ const capturePayment = async (req, res) => {
         // Check Opay payment status
         const statusResponse = await checkOpayPaymentStatus(opayReference);
 
-        console.log(statusResponse, 'Payment Status Response');
-
         if (statusResponse.code !== '00000' || statusResponse.data.status !== 'SUCCESS') {
             return res.status(400).json({
                 success: false,
@@ -218,12 +212,84 @@ const capturePayment = async (req, res) => {
 
         const childOrders = await ChildOrder.find({ parentOrderId: parentOrder._id });
 
+        const vendorIds = childOrders.map(order => order.vendorId)
+
         for (const childOrder of childOrders) {
             childOrder.payoutStatus = 'completed';
             await childOrder.save();
         }
 
         await Cart.findByIdAndDelete(cartID)
+
+        const allCartItems = childOrders.flatMap(order => order.cartItems || []);
+
+        // Use string keys to ensure ObjectId instances don't create duplicate keys
+        const productQuantityMap = allCartItems.reduce((acc, item) => {
+            if (item.productId && typeof item.quantity === 'number') {
+                const pid = item.productId.toString();
+                acc[pid] = (acc[pid] || 0) + item.quantity;
+            }
+            return acc;
+        }, {});
+
+        const stockUpdatePromises = Object.entries(productQuantityMap).map(([productId, quantity]) => {
+            // productId is a string key; update once per unique product
+            return Product.findById(productId).then(product => {
+                if (!product) return null;
+                const quantityBefore = product.totalStock || 0;
+                const quantityAfterUpdate = Math.max(0, quantityBefore - quantity);
+                // console.log(`Product ${productId} - Quantity Before: ${quantityBefore}, Quantity to reduce: ${quantity}`);
+
+                return Product.findByIdAndUpdate(
+                    productId,
+                    { totalStock: quantityAfterUpdate },
+                    { new: true }
+                ).then(updatedProduct => {
+                    const quantityAfter = updatedProduct?.totalStock || 0;
+                    // console.log(`Product ${productId} - Quantity After: ${quantityAfter}`);
+                    return updatedProduct;
+                });
+            });
+        });
+
+        await Promise.all(stockUpdatePromises);
+
+        const vendorDetails = await Vendor.find({ _id: { $in: vendorIds } }).select('phoneNumber _id email');
+
+        for (const vendor of vendorDetails) {
+            const message = `You have a new order with reference ${parentOrder._id}. Please check your dashboard for details.`;
+
+            // Here you can integrate with an email service or SMS gateway to send the notification
+
+            // Test WhatsApp API call
+
+            const axios = require('axios');
+
+            const recipientPhone = vendor.phoneNumber ? vendor.phoneNumber.slice(1) : '';
+            const data = {
+                messaging_product: 'whatsapp',
+                to: "234" + recipientPhone, // Replace with the recipient's phone number
+                type: 'template',
+                template: {
+                    name: 'order_waiting', // Replace with your actual template name
+                    language: {
+                        code: 'en'
+                    },
+                }
+            };
+
+            accessToken = 'EAAODhnypZCwsBRj7GoZAxxF2pj00GwcP60S4CzsfU5I2cnAauZBWa71vMNHAGiSG0UKR0xcivKU74hUBEO9WxwjZCixKPRMOshIt9GJpQ8m2DtlnUwZAU8SBaU8I92OQjakgaZCZCJRXivOqcBBWwYEtaeFDg1BF9cXgIAb13lZBx764NHusE7BA2dT3i9ydc4KqmgZDZD'
+
+            axios.post('https://graph.facebook.com/v21.0/1140591912470830/messages', data, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => console.log(response.data, 'Message sent successfully'))
+                .catch(error => console.error(error.response.data));
+
+        }
 
         res.status(200).json({
             success: true,
@@ -269,6 +335,38 @@ const queryPayment = async (req, res) => {
 
             await Cart.findByIdAndDelete(cartID)
 
+            for (const vendor of vendorDetails) {
+
+                // Test WhatsApp API call
+
+                const axios = require('axios');
+
+                const recipientPhone = vendor.phoneNumber ? vendor.phoneNumber.slice(1) : '';
+                const data = {
+                    messaging_product: 'whatsapp',
+                    to: "234" + recipientPhone, // Replace with the recipient's phone number
+                    type: 'template',
+                    template: {
+                        name: 'hello_world', // Replace with your actual template name
+                        language: {
+                            code: 'en_US'
+                        },
+                    }
+                };
+
+                accessToken = 'EAAODhnypZCwsBRvZAZCHeo27ZAqGit4c4ahjLbWeGCFki9cdkcdSatZBZCTPEJWAO9XVRHxUqBYB4BdpTBJ4XVQcjNxZChjeM1EKErOfuNSpeKN3qZAKZBPVwjqxzXr8yV4zSWa1rV3ZBxWYbL1BbBqsgZCGEZAzotVivG6ZBu2j9NcBXdXCjFUjAMVzBfgFdaF5MgdsZBSuZAQ0y7ySJ4CJ76ifxjZCocKsWTewpPX5EySJ3HXJ2sPpGxtCszGUvv7oOcceZBjzRuBLPwuwWpb34HMoTUmFHhXcj'
+
+                axios.post('https://graph.facebook.com/v21.0/1140591912470830/messages', data, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => console.log(response.data, 'Message sent successfully'))
+                    .catch(error => console.error(error.response.data));
+
+            }
+
             return res.status(200).json({
                 success: true,
                 message: 'Payment captured successfully!',
@@ -291,7 +389,7 @@ const queryPayment = async (req, res) => {
 
             parentOrder.paymentId = newPaymentId;
             // Do not overwrite _id; use a separate payment reference if needed.
-            
+
             await parentOrder.save();
 
             res.status(200).json({
@@ -313,34 +411,35 @@ const queryPayment = async (req, res) => {
 
 
 const getAllOrdersByUser = async (req, res) => {
-
-
     try {
         const { userID } = req.params
+        const { status, sortBy } = req.query
 
-        const orders = await ParentOrder.find({ userId: userID })
+        const filter = { userId: userID }
+        const allowedPaymentStatuses = ['pending', 'completed', 'failed']
 
-        if (!orders.length) {
-            res.status(400).json({
-                success: false,
-                message: 'No orders were found!'
-            })
+        if (status && status !== 'all' && allowedPaymentStatuses.includes(status)) {
+            filter.paymentStatus = status
         }
 
-        res.status(200).json({
+        const sortCriteria = { orderDate: -1 }
+        if (sortBy === 'oldest') {
+            sortCriteria.orderDate = 1
+        }
+
+        const orders = await ParentOrder.find(filter).sort(sortCriteria)
+
+        return res.status(200).json({
             success: true,
             data: orders
         })
-
     } catch (error) {
         console.log(error)
         res.status(500).json({
             success: false,
             message: 'There was an error getting orders!'
         })
-
     }
-
 }
 
 const getOrderDetails = async (req, res) => {
