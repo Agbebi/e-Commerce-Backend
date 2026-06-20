@@ -26,9 +26,9 @@ const createOpayPayment = async (orderData) => {
             "total": orderData.totalAmount,
             "currency": "EGP"
         },
-        "returnUrl": `${localHost}/shop/payment`,
-        "callbackUrl": `${localHost}/shop/checkout`,
-        "cancelUrl": `${localHost}/shop/checkout`,
+        "returnUrl": `${appUrl}/shop/payment`,
+        "callbackUrl": `${appUrl}/shop/checkout`,
+        "cancelUrl": `${appUrl}/shop/checkout`,
         "expireAt": 300,
         "userInfo": {
             "userEmail": orderData.customerEmail || "test@email.com",
