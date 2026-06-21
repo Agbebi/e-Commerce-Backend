@@ -13,7 +13,7 @@ const orderRouter = require('./routes/shop/order-routes')
 const adminOrdersRouter = require('./routes/admin/orders-routes')
 const dispatchOrdersRouter = require('./routes/dispatch/orders-routes')
 const shopSearchRouter = require('./routes/shop/search-routes')
-
+const shopReviewRouter = require('./routes/shop/review-routes')
 
 const PORT = process.env.PORT || 3000
 
@@ -59,6 +59,7 @@ app.use('/api/shop/cart', shopCartRouter)
 app.use('/api/shop/address', addressRouter)
 app.use('/api/shop/order', orderRouter)
 app.use('/api/shop/search', shopSearchRouter)
+app.use('/api/shop/reviews', shopReviewRouter)
 
 app.use('/api/dispatch/orders', dispatchOrdersRouter)
 

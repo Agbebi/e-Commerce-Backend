@@ -10,6 +10,8 @@ const productSchema = new mongoose.Schema({
     name : String,
     description : String,
     category : String,
+    subcategory : String,
+    keyFeatures : [String],
     price : Number,
     brand : String,
     salesPrice : Number,

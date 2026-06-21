@@ -37,20 +37,28 @@ const handleImageUpload = async (req, res) => {
 
 async function addProduct(req, res) {
     try {
-        const { images, image, name, description, category, vendorId, brand, price, salesPrice, totalStock } = req.body
+        const { images, image, name, description, category, subcategory, keyFeatures, vendorId, brand, price, salesPrice, totalStock } = req.body
         
         const newImages = Array.isArray(images)
             ? images.slice(0, 5)
             : image ? [image] : []
 
+        const parsedKeyFeatures = Array.isArray(keyFeatures)
+            ? keyFeatures.filter(Boolean)
+            : typeof keyFeatures === 'string'
+                ? keyFeatures.split(/\r?\n/).map(item => item.trim()).filter(Boolean)
+                : []
+
         const newlyCreatedProduct = new Product({
             images: newImages,
             name,
-            description, 
-            category, 
-            brand, 
-            price, 
-            salesPrice, 
+            description,
+            category,
+            subcategory,
+            keyFeatures: parsedKeyFeatures,
+            brand,
+            price,
+            salesPrice,
             totalStock,
             vendorId
         })        
@@ -102,7 +110,7 @@ async function editProduct(req, res) {
 
         const { id } = req.params
         
-        const { images, image, name, description, category, brand, price, salesPrice, totalStock } = req.body
+        const { images, image, name, description, category, subcategory, keyFeatures, brand, price, salesPrice, totalStock } = req.body
 
         const findProduct = await Product.findById(id)
 
@@ -117,10 +125,18 @@ async function editProduct(req, res) {
             ? images.slice(0, 5)
             : image ? [image] : findProduct.images
 
+        const parsedKeyFeatures = Array.isArray(keyFeatures)
+            ? keyFeatures.filter(Boolean)
+            : typeof keyFeatures === 'string'
+                ? keyFeatures.split(/\r?\n/).map(item => item.trim()).filter(Boolean)
+                : findProduct.keyFeatures || []
+
         findProduct.images = newImages.length > 0 ? newImages : findProduct.images
         findProduct.name = name || findProduct.name
         findProduct.description = description || findProduct.description
         findProduct.category = category || findProduct.category
+        findProduct.subcategory = subcategory || findProduct.subcategory
+        findProduct.keyFeatures = parsedKeyFeatures.length > 0 ? parsedKeyFeatures : findProduct.keyFeatures
         findProduct.brand = brand || findProduct.brand
         findProduct.price = price == '' ? 0 : price || findProduct.price
         findProduct.salesPrice = salesPrice == '' ? 0 : salesPrice || findProduct.salesPrice

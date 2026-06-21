@@ -1,18 +1,38 @@
 const Product = require('../../models/Product');
 
 
+const normalizeQueryValue = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value.flatMap((item) =>
+            item.toString().split(',').map((entry) => entry.trim()).filter(Boolean),
+        );
+    }
+    return value.toString().split(',').map((entry) => entry.trim()).filter(Boolean);
+};
+
 const getFilteredProducts = async (req, res) => {
-    try {        
-        const { Category = [], Brand = [], sortBy ='price:low-to-high'} = req.query
+    try {
+        const {
+            sortBy = 'price:low-to-high',
+        } = req.query;
+
+        const Category = normalizeQueryValue(req.query.Category);
+        const SubCategory = normalizeQueryValue(req.query.SubCategory);
+        const Brand = normalizeQueryValue(req.query.Brand);
 
         let filters = {}
 
         if (Category.length > 0) {
-            filters.category = { $in: Category.split(',') }
+            filters.category = { $in: Category };
+        }
+
+        if (SubCategory.length > 0) {
+            filters.subcategory = { $in: SubCategory };
         }
 
         if (Brand.length > 0) {
-            filters.brand = { $in: Brand.split(',') }
+            filters.brand = { $in: Brand };
         }
 
 
