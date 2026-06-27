@@ -18,13 +18,13 @@ const localHost = 'http://localhost:5173'
 // Function to create Opay payment
 const createOpayPayment = async (orderData) => {
 
-    const total = (orderData.totalAmount * 100).toFixed(2) 
+    const total = (orderData.totalAmount * 100).toFixed(2)
 
     const payload = {
         "country": "NG",
         "reference": orderData.reference || crypto.randomBytes(5).toString('hex'),
         "amount": {
-            "total": orderData.totalAmount,
+            "total": total,
             "currency": "NGN"
         },
         "returnUrl": `${appUrl}/shop/payment`,
