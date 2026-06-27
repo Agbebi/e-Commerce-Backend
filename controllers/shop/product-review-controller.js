@@ -1,4 +1,4 @@
-const Order = require("../../models/Order");
+const {ChildOrder} = require("../../models/Order");
 const ProductReview = require("../../models/Review");
 
 const addProductReview = async (req, res) => {
@@ -11,7 +11,7 @@ const addProductReview = async (req, res) => {
             reviewMessage
         } = req.body;
 
-        const order = await Order.findOne({ userId, "cartItems.productId": productId, orderStatus: "delivered" });
+        const order = await ChildOrder.findOne({ userId, "cartItems.productId": productId, paymentStatus: "completed" });
 
         if (!order) {
             return res.status(404).json({ success: false, message: "Order not found" });

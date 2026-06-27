@@ -9,22 +9,23 @@ const sha512 = require('js-sha512')
 
 // Opay configuration
 const OPAY_BASE_URL = 'https://sandboxapi.opaycheckout.com';
-const OPAY_PUBLIC_KEY = 'OPAYPUB17782384347090.6758872452131219'
-const OPAY_SECRET_KEY = 'OPAYPRV17782384347090.24215435556647158'
-const OPAY_MERCHANT_ID = '281826050879658'
+const OPAY_PUBLIC_KEY = 'OPAYPUB17821997897920.772485483632159'
+const OPAY_SECRET_KEY = 'OPAYPRV17821997897920.648143041195691'
+const OPAY_MERCHANT_ID = '256626062390041'
 const appUrl = "https://timscommerce.netlify.app"
 const localHost = 'http://localhost:5173'
 
 // Function to create Opay payment
 const createOpayPayment = async (orderData) => {
 
+    const total = (orderData.totalAmount * 100).toFixed(2) 
 
     const payload = {
-        "country": "EG",
-        "reference": orderData.reference || crypto.randomBytes(16).toString('hex'),
+        "country": "NG",
+        "reference": orderData.reference || crypto.randomBytes(5).toString('hex'),
         "amount": {
             "total": orderData.totalAmount,
-            "currency": "EGP"
+            "currency": "NGN"
         },
         "returnUrl": `${appUrl}/shop/payment`,
         "callbackUrl": `${appUrl}/shop/checkout`,
@@ -61,7 +62,7 @@ const createOpayPayment = async (orderData) => {
 // Function to check Opay payment status
 const checkOpayPaymentStatus = async (reference) => {
     const formData = {
-        country: 'EG',
+        country: 'NG',
         reference: reference
     };
 
