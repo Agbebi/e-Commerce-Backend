@@ -11,6 +11,28 @@ const normalizeQueryValue = (value) => {
     return value.toString().split(',').map((entry) => entry.trim()).filter(Boolean);
 };
 
+const getAvailableBrands = async (req, res) => {
+    try {
+        const brands = await Product.distinct('brand', { brand: { $exists: true, $ne: '' } });
+        const sortedBrands = (brands || [])
+            .filter(Boolean)
+            .map((brand) => brand.toString().trim())
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b));
+
+        res.status(200).json({
+            success: true,
+            data: sortedBrands,
+        });
+    } catch (error) {
+        console.log('Error fetching brands:', error);
+        res.status(500).json({
+            success: false,
+            message: 'An error occurred while fetching brands',
+        });
+    }
+};
+
 const getFilteredProducts = async (req, res) => {
     try {
         const {
@@ -102,4 +124,4 @@ const getProductDetails = async (req, res) => {
 }
 
 
-module.exports = { getFilteredProducts, getProductDetails }
+module.exports = { getFilteredProducts, getProductDetails, getAvailableBrands }
