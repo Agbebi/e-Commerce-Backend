@@ -53,7 +53,7 @@ const sendVerificationEmail = async (email, verificationUrl) => {
 
         const result = await brevo.transactionalEmails.sendTransacEmail({
             subject: 'Verify your email address!',
-            htmlContent: `<html><body><p>Hello,</p><p>Thanks for signing up. Please verify your email by clicking <a href="${verificationUrl}</p></body></html>`,
+            htmlContent: `<html><body><p>Hello,</p><p>Thanks for signing up. Please verify your email by clicking <a href="${verificationUrl}">this link</a>.</p></body></html>`,
             sender: { name: 'Alex from Brevo', email: 'agbebitimothy8@gmail.com' },
             to: [{ email: email, name: 'John Doe' }],
         });
