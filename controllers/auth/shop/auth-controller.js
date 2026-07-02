@@ -29,16 +29,13 @@ const sendVerificationEmail = async (email, verificationUrl) => {
     }
 
     const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT || 587),
-        secure: Boolean(process.env.SMTP_SECURE === 'true'),
+        host: 'smtp-relay.brevo.com',
+        port: 587,
+        secure: false,
         auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS
         },
-        tls: {
-            rejectUnauthorized: false
-        }
     })
 
     try {
