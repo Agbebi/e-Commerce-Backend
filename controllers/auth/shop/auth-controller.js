@@ -33,7 +33,7 @@ const sendVerificationEmail = async (email, verificationUrl) => {
         port: 587,
         secure: false,
         auth: {
-            user: process.env.SMTP_USER,
+            user: 'b0a185001@smtp-brevo.com',
             pass: process.env.SMTP_PASS
         },
     })
